@@ -1,4 +1,4 @@
-from application.repository.AlgorithmRepository import AlgorithmRepository
+from application.domain.repository.AlgorithmRepository import AlgorithmRepository
 from algorithm.algorithm_bfoa import BfOA_VRP
 
 class RouteAlgorithmRepository(AlgorithmRepository):

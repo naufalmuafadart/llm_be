@@ -2,10 +2,14 @@ from flask import Flask, request
 from flask_cors import CORS
 from dotenv import load_dotenv
 from dependency_injector import containers, providers
+from application.infrastructure.database.mongo_db import MongoDBClient
+
+# route
+from application.presentation.api.route_auth import route_auth
 
 # infrastructure
-from application.infrastructure.PandasDataFrameRepositoy import PandasDataFrameRepository
-from application.infrastructure.RouteAlgorithmRepository import RouteAlgorithmRepository
+from application.infrastructure.repository.PandasDataFrameRepositoy import PandasDataFrameRepository
+from application.infrastructure.repository.RouteAlgorithmRepository import RouteAlgorithmRepository
 
 # use case
 from application.use_case.GenerateRecommendationUseCase import GenerateRecommendationUseCase
@@ -16,6 +20,10 @@ load_dotenv()
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": os.getenv('FRONTEND_URL')}}, supports_credentials=True)
+
+#setup mongodb
+client = MongoDBClient()
+db = client.get_database()
 
 # Dependency container
 class Container(containers.DeclarativeContainer):
@@ -51,8 +59,10 @@ def recommender():
     except Exception as e:
         return {
             'status': 'fail',
-            'message': str(e),
-            # 'message': 'fail to generate route',
+            'message': 'fail to generate route',
+            # 'message': str(e),
         }, 500
+
+app.register_blueprint(route_auth, url_prefix='/api/auth')
 
 app.run(debug=True)

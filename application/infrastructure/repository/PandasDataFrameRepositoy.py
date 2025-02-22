@@ -1,4 +1,4 @@
-from application.repository.DataFrameRepository import DataFrameRepository
+from application.domain.repository.DataFrameRepository import DataFrameRepository
 import pandas as pd
 
 class PandasDataFrameRepository(DataFrameRepository):
