@@ -1,4 +1,5 @@
 from exception.UnauthorizedError import UnauthorizedError
+from application.domain.entity.auth_token.RegisterAuthTokenPayloadEntity import RegisterAuthTokenPayloadEntity
 
 class AddAuthUseCase:
     def __init__(self, hashing_repository, auth_token_repository, auth_repository, user_repository):
@@ -16,11 +17,9 @@ class AddAuthUseCase:
         except Exception as e:
             raise UnauthorizedError('Email or password is invalid')
         
-        body = {
-            'id': str(registered_user.id)
-        }
-        access_token = self.auth_token_repository.create(body, True)
-        refresh_token = self.auth_token_repository.create(body, False)
+        payload = RegisterAuthTokenPayloadEntity(registered_user.id)
+        access_token = self.auth_token_repository.create(payload, True)
+        refresh_token = self.auth_token_repository.create(payload, False)
         refresh_token_exp = self.auth_token_repository.get_expired_at(refresh_token, False)
 
         # store refresh token in database
