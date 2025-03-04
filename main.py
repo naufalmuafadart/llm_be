@@ -6,6 +6,7 @@ from application.infrastructure.database.mongo_db import MongoDBClient
 
 # route
 from application.presentation.api.route_auth import route_auth
+from application.presentation.api.route_llm import route_llm
 
 # infrastructure
 from application.infrastructure.repository.PandasDataFrameRepositoy import PandasDataFrameRepository
@@ -64,5 +65,6 @@ def recommender():
         }, 500
 
 app.register_blueprint(route_auth, url_prefix='/api/auth')
+app.register_blueprint(route_llm, url_prefix='/api/llm')
 
 app.run(debug=True)
