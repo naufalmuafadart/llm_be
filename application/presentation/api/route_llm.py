@@ -25,8 +25,7 @@ def extract_key_detail():
     data = request.json
     message = data.get('message')
 
-    content = "This is an itinerary request in Bahasa. Please extract the days count, preferred attraction type, and preferred budget. Show the data in json format. The attraction type should be serve as array. If the key detail is not exist, set the value to null. \""+message+"\""
-    detail = use_case.execute(content)
+    detail = use_case.execute(message)
 
     return {
         'status': 'success',

@@ -11,6 +11,8 @@ from application.presentation.api.route_llm import route_llm
 # infrastructure
 from application.infrastructure.repository.PandasDataFrameRepositoy import PandasDataFrameRepository
 from application.infrastructure.repository.RouteAlgorithmRepository import RouteAlgorithmRepository
+from application.infrastructure.repository.GeminiLLMRepository import GeminiLLMRepository
+from application.infrastructure.repository.MongoAttractionRepository import MongoAttractionRepository
 
 # use case
 from application.use_case.GenerateRecommendationUseCase import GenerateRecommendationUseCase
@@ -30,6 +32,8 @@ db = client.get_database()
 class Container(containers.DeclarativeContainer):
     data_frame_repository = providers.Singleton(PandasDataFrameRepository)
     algorithm_repository = providers.Singleton(RouteAlgorithmRepository)
+    llm_repository = providers.Singleton(GeminiLLMRepository)
+    attraction_repository = providers.Singleton(MongoAttractionRepository)
 
 # Register the container
 container = Container()
@@ -49,6 +53,8 @@ def recommender():
         use_case = GenerateRecommendationUseCase(
             container.data_frame_repository(),
             container.algorithm_repository(),
+            container.llm_repository(),
+            container.attraction_repository(),
         )
         content = use_case.execute(message)
         return {

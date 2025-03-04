@@ -2,7 +2,7 @@ from application.domain.repository.LLMRepository import LLMRepository
 from google import genai
 from dotenv import load_dotenv
 
-import ast
+import json
 import os
 
 class GeminiLLMRepository(LLMRepository):
@@ -20,4 +20,4 @@ class GeminiLLMRepository(LLMRepository):
         text = text.replace('\n', '')
         text = text.replace(' ', '')
 
-        return ast.literal_eval(text)
+        return json.loads(text)
