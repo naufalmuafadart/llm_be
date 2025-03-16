@@ -11,17 +11,10 @@ class GenerateRecommendationUseCase:
         self.attraction_ranking_repository = attraction_ranking_repository
 
     def execute(self, message):
-        high_rating_doi_keyword = [
-            'populer',
-            'popular',
-            'bahagia',
-            'terkenal'
-        ]
-
         df_places = self.data_frame_repository.get_data('places')
 
         # extract key detail from the message
-        content = "This is an itinerary request in Bahasa. Please extract the days count, preffered attraction type, and preferred budget. Show the data in json format. The name of each key in json is `days_count`, `preferred_attraction`, and `preferred_budget`. The `preferred_attraction` should be serve as array. If the key detail is not exist, set the value to null. \""+message+"\""
+        content = "The following text is an itinerary request in Bahasa. Please extract the days count, preferred attraction, importance of the popularity, and importance of the and cost. Give the output in JSON format. The keys is `days_count`, `preferred_attraction`, 'popularity_weight' and 'cost_weight'. If no information available about days count, preferred attraction, popularity or cost, set the value to null. The value of preferred_attraction should be an array or null. \""+message+"\""
         data = self.llm_repository.get_request_key_detail(content)
         print(data)
         # data = {'days_count': 2, 'preferred_attraction': ['alam', 'instagramable'], 'preferred_budget': 'murah'}
@@ -40,13 +33,16 @@ class GenerateRecommendationUseCase:
         if selected_ids is None or len(selected_ids) == 0:
             raise Exception('Cannot generate itinerary without preferred attraction')
 
+        # set doi cost
         doi_cost = 0.5
-        preferred_budget = data['preferred_budget']
-        if preferred_budget == 'murah' or preferred_budget == 'terjangkau' or preferred_budget == 'budgetfriendly' or preferred_budget == 'budget friendly':
-            doi_cost = 1
+        cost_weight = data['cost_weight']
+        if cost_weight is not None and (cost_weight.lower() == 'tinggi' or cost_weight.lower() == 'high'):
+            doi_rating = 1
         
+        # set doi rating
         doi_rating = 0.5
-        if any(keyword in message.lower() for keyword in high_rating_doi_keyword):
+        popularity_weight = data['popularity_weight']
+        if popularity_weight is not None and (popularity_weight.lower() == 'tinggi' or popularity_weight.lower() == 'high'):
             doi_rating = 1
 
         registered_attractions = self.attraction_repository.get_registered_attraction_by_ids(selected_ids) # get attraction data from db
