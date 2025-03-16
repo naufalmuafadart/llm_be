@@ -13,6 +13,7 @@ from application.infrastructure.repository.PandasDataFrameRepositoy import Panda
 from application.infrastructure.repository.RouteAlgorithmRepository import RouteAlgorithmRepository
 from application.infrastructure.repository.GeminiLLMRepository import GeminiLLMRepository
 from application.infrastructure.repository.MongoAttractionRepository import MongoAttractionRepository
+from application.infrastructure.repository.AHPAttractionRankingRepository import AHPAttractionRankingRepository
 
 # use case
 from application.use_case.GenerateRecommendationUseCase import GenerateRecommendationUseCase
@@ -34,6 +35,7 @@ class Container(containers.DeclarativeContainer):
     algorithm_repository = providers.Singleton(RouteAlgorithmRepository)
     llm_repository = providers.Singleton(GeminiLLMRepository)
     attraction_repository = providers.Singleton(MongoAttractionRepository)
+    attraction_ranking_repository = providers.Singleton(AHPAttractionRankingRepository)
 
 # Register the container
 container = Container()
@@ -55,6 +57,7 @@ def recommender():
             container.algorithm_repository(),
             container.llm_repository(),
             container.attraction_repository(),
+            container.attraction_ranking_repository(),
         )
         content = use_case.execute(message)
         return {
@@ -67,7 +70,7 @@ def recommender():
         return {
             'status': 'fail',
             'message': 'fail to generate route',
-            # 'message': str(e),
+            'text': str(e),
         }, 500
 
 app.register_blueprint(route_auth, url_prefix='/api/auth')

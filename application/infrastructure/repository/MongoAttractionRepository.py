@@ -1,5 +1,6 @@
 from application.domain.repository.AttractionRepository import AttractionRepository
 from application.infrastructure.database.mongo_db import MongoDBClient
+from application.domain.entity.attraction.RegisteredAttractionEntity import RegisteredAttractionEntity
 
 class MongoAttractionRepository(AttractionRepository):
     def get_ids_by_selected_tags(self, tags):
@@ -43,3 +44,45 @@ class MongoAttractionRepository(AttractionRepository):
             ids.append(result['place_details']['order'])
 
         return ids
+
+    def get_registered_attraction_by_ids(self, ids):
+        client = MongoDBClient()
+        db = client.get_database()
+        attractions_collection = db["attractions"]
+
+        attractions = list(attractions_collection.aggregate([
+            {
+                "$lookup": {
+                    "from": "places",
+                    "localField": "place_id",
+                    "foreignField": "_id",
+                    "as": "place_info"
+                }
+            },
+            {
+                "$match": {
+                    "place_info.order": {"$in": ids}
+                }
+            },
+            {
+                "$set": {
+                    "rating": {"$arrayElemAt": ["$place_info.rating", 0]},
+                    "order": {"$arrayElemAt": ["$place_info.order", 0]},
+                }
+            },
+            {
+                "$unset": "place_info"
+            }
+        ]))
+
+        results = []
+        for attr in attractions:
+            results.append(RegisteredAttractionEntity(
+                str(attr['_id']),
+                attr['order'],
+                attr['tags'],
+                attr['cost'],
+                attr['rating'],
+            ))
+
+        return results

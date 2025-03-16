@@ -3,36 +3,57 @@ from application.domain.entity.itinerary_request.RequestKeyDetailEntity import R
 import time
 
 class GenerateRecommendationUseCase:
-    def __init__(self, data_frame_repository, algorithm_repository, llm_repository, attraction_repository):
+    def __init__(self, data_frame_repository, algorithm_repository, llm_repository, attraction_repository, attraction_ranking_repository):
         self.data_frame_repository = data_frame_repository
         self.algorithm_repository = algorithm_repository
         self.llm_repository = llm_repository
         self.attraction_repository = attraction_repository
+        self.attraction_ranking_repository = attraction_ranking_repository
 
     def execute(self, message):
+        high_rating_doi_keyword = [
+            'populer',
+            'popular',
+            'bahagia',
+            'terkenal'
+        ]
+
         df_places = self.data_frame_repository.get_data('places')
 
         # extract key detail from the message
         content = "This is an itinerary request in Bahasa. Please extract the days count, preffered attraction type, and preferred budget. Show the data in json format. The name of each key in json is `days_count`, `preferred_attraction`, and `preferred_budget`. The `preferred_attraction` should be serve as array. If the key detail is not exist, set the value to null. \""+message+"\""
         data = self.llm_repository.get_request_key_detail(content)
+        print(data)
+        # data = {'days_count': 2, 'preferred_attraction': ['alam', 'instagramable'], 'preferred_budget': 'murah'}
 
-        n_day = data['days_count']
-        if n_day is None:
+        n_day = data['days_count'] # Get #day from extracted data
+        if n_day is None: # if day is none
             n_day = 1
 
-        selected_ids = [1, 2, 3, 4, 5]
+        # get preferred attraction
         preferred_attraction = data['preferred_attraction']
         if preferred_attraction is None or len(preferred_attraction) == 0:
             raise Exception('Cannot generate itinerary without preferred attraction')
 
+        # get id of attraction based on preferred attraction
         selected_ids = self.attraction_repository.get_ids_by_selected_tags(preferred_attraction)
         if selected_ids is None or len(selected_ids) == 0:
             raise Exception('Cannot generate itinerary without preferred attraction')
-        
-        doi_cost = 0.3
+
+        doi_cost = 0.5
         preferred_budget = data['preferred_budget']
         if preferred_budget == 'murah' or preferred_budget == 'terjangkau' or preferred_budget == 'budgetfriendly' or preferred_budget == 'budget friendly':
             doi_cost = 1
+        
+        doi_rating = 0.5
+        if any(keyword in message.lower() for keyword in high_rating_doi_keyword):
+            doi_rating = 1
+
+        registered_attractions = self.attraction_repository.get_registered_attraction_by_ids(selected_ids) # get attraction data from db
+        registered_attractions = self.attraction_ranking_repository.sort_attraction(registered_attractions, doi_rating, doi_cost) # sort attraction using AHP
+        registered_attractions = registered_attractions[:n_day*6]
+
+        selected_ids = [attraction.order for attraction in registered_attractions]
 
         output, Fbest = self.algorithm_repository.construct_solution(
             selected_ids,
